@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Animación de Prueba: Rasca el Regalo 3D</title>
+    <style>
+        :root {
+            --color-caja: #b983ff; /* Lila vibrante */
+            --color-caja-sombra: #9a66e0;
+            --color-cinta: #ff00ff; /* Rosa neón / Magenta */
+            --color-cinta-brillo: #ff80ff;
+            --color-oro: #ffd700;
+            --color-arbol: #2d862d;
+            --color-fondo: #220044;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Arial Rounded MT Bold', 'Helvetica', sans-serif;
+            overflow: hidden;
+            background-color: var(--color-fondo);
+            /* Fondo parpadeante */
+            animation: parpadeoFondo 4s infinite;
+            perspective: 1000px; /* Necesario para el efecto 3D */
+            touch-action: none; /* Desactiva scroll en móvil para el rascado */
+        }
+
+        @keyframes parpadeoFondo {
+            0%, 100% { background-color: #220044; }
+            50% { background-color: #440088; box-shadow: inset 0 0 100px #6600cc; }
+        }
+
+        /* Partículas flotantes */
+        .particula {
+            position: absolute;
+            background: rgba(200, 150, 255, 0.8);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: flotar 5s infinite linear;
+            filter: blur(1px);
+        }
+
+        @keyframes flotar {
+            0% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) translateX(20px); opacity: 0; }
+        }
+
+        #escenario {
+            position: relative;
+            width: 300px;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* --- Árbol de Navidad Estilizado --- */
+        #arbol {
+            position: absolute;
+            bottom: 50px;
+            left: -120px;
+            width: 100px;
+            height: 150px;
+            z-index: 1;
+        }
+
+        .hojas-arbol {
+            width: 0; height: 0;
+            border-left: 50px solid transparent;
+            border-right: 50px solid transparent;
+            border-bottom: 120px solid var(--color-arbol);
+            position: relative;
+            filter: drop-shadow(0 0 10px rgba(0,255,0,0.3));
+        }
+
+        .hojas-arbol::after {
+            content: '';
+            position: absolute;
+            width: 20px; height: 30px;
+            background: #663300;
+            bottom: -150px; left: -10px;
+        }
+
+        .esfera {
+            position: absolute;
+            border-radius: 50%;
+            width: 12px; height: 12px;
+            box-shadow: inset -2px -2px 4px rgba(0,0,0,0.3);
+        }
+        .esfera-roja { background: #ff3333; box-shadow: 0 0 10px #ff3333; }
+        .esfera-rosa { background: #ff99cc; box-shadow: 0 0 10px #ff99cc; }
+
+        /* --- UI: Textos e Indicador --- */
+        #ui-contenedor {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            text-align: center;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        #texto-guia {
+            color: white;
+            font-size: 24px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px var(--color-cinta), 0 0 20px white;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        #indicador-rascado {
+            width: 100px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+            margin: 0 auto;
+            position: relative;
+        }
+
+        #indicador-rascado::after {
+            content: '↔️';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            animation: moverFlecha 1s infinite;
+        }
+
+        @keyframes moverFlecha {
+            0%, 100% { transform: translateX(-70%); }
+            50% { transform: translateX(-30%); }
+        }
+
+        /* --- LA CAJA REGALO 3D CARTOON --- */
+        #contenedor-regalo {
+            width: 150px;
+            height: 150px;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(-15deg) rotateY(15deg);
+            transition: transform 0.2s ease, filter 0.5s ease;
+            cursor: pointer;
+            z-index: 5;
+        }
+
+        /* Caras del cubo */
+        .cara {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            background: var(--color-caja);
+            border: 4px solid rgba(0,0,0,0.1);
+            box-sizing: border-box;
+            overflow: hidden; /* Para las cintas */
+        }
+
+        .frontal { transform: translateZ(75px); background: var(--color-caja); }
+        .derecha { transform: rotateY(90deg) translateZ(75px); background: var(--color-caja-sombra); }
+        .superior { transform: rotateX(90deg) translateZ(75px); background: #d0b0ff; }
+
+        /* Cintas Rosa Neón */
+        .cinta-v {
+            position: absolute;
+            top: 0; left: 60px;
+            width: 30px; height: 100%;
+            background: var(--color-cinta);
+            box-shadow: 0 0 15px var(--color-cinta);
+            border-left: 2px solid var(--color-cinta-brillo);
+            border-right: 2px solid var(--color-cinta-brillo);
+        }
+        .cinta-h {
+            position: absolute;
+            top: 60px; left: 0;
+            width: 100%; height: 30px;
+            background: var(--color-cinta);
+            box-shadow: 0 0 15px var(--color-cinta);
+            border-top: 2px solid var(--color-cinta-brillo);
+            border-bottom: 2px solid var(--color-cinta-brillo);
+        }
+
+        /* Estrella Dorada Lisa */
+        #estrella {
+            position: absolute;
+            top: 50px; left: 50px;
+            width: 50px; height: 50px;
+            background: var(--color-oro);
+            /* Forma de estrella de múltiples puntas */
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+            box-shadow: 0 0 20px var(--color-oro);
+        }
+
+        /* Lazo superior estilizado */
+        #lazo-contenedor {
+            position: absolute;
+            top: -45px;
+            left: 50%;
+            transform: translateX(-50%) translateZ(75px);
+            width: 120px;
+            height: 60px;
+            pointer-events: none;
+            z-index: 6;
+        }
+
+        .oreja-lazo {
+            position: absolute;
+            width: 60px; height: 50px;
+            background: var(--color-cinta);
+            border-radius: 50px 50px 0 50px;
+            border: 3px solid var(--color-cinta-brillo);
+            box-shadow: 0 0 15px var(--color-cinta);
+        }
+        .oreja-izq { left: 0; transform: rotate(-20deg); }
+        .oreja-der { right: 0; transform: rotate(20deg) scaleX(-1); }
+        .nudo-lazo {
+            position: absolute;
+            top: 15px; left: 45px;
+            width: 30px; height: 30px;
+            background: var(--color-cinta);
+            border-radius: 8px;
+            border: 3px solid var(--color-cinta-brillo);
+            z-index: 2;
+        }
+
+        /* Efecto de daño/rascado */
+        .rasguño {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.6);
+            height: 4px;
+            border-radius: 2px;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        /* --- Animaciones de estados --- */
+
+        /* Animación cuando está AFK (Caja abierta ligeramente flotando) */
+        .estado-afk {
+            animation: flotarAbierta 1.5s infinite alternate ease-in-out;
+            cursor: default !important;
+        }
+
+        @keyframes flotarAbierta {
+            0% { transform: rotateX(-15deg) rotateY(15deg) translateZ(10px); }
+            100% { transform: rotateX(-15deg) rotateY(15deg) translateZ(30px); filter: brightness(1.1); }
+        }
+
+        /* Animación final al romperse (Giro y Destello) */
+        .animacion-final {
+            animation: giroDestello 1.2s forwards ease-in-out;
+        }
+
+        @keyframes giroDestello {
+            0% { transform: rotateX(-15deg) rotateY(15deg) scale(1); filter: brightness(1); opacity: 1; }
+            50% { transform: rotateX(0deg) rotateY(360deg) scale(1.2); filter: brightness(3); opacity: 1; }
+            100% { transform: rotateX(0deg) rotateY(720deg) scale(0); filter: brightness(5); opacity: 0; }
+        }
+
+        /* Destello mágico final */
+        #super-destello {
+            position: fixed;
+            width: 10px; height: 10px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 100px 50px white, 0 0 200px 100px var(--color-cinta);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* --- Cartel Final de Prueba --- */
+        #cartel-final {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.8);
+            color: var(--color-oro);
+            border: 4px solid var(--color-cinta);
+            padding: 20px 40px;
+            border-radius: 15px;
+            font-size: 20px;
+            text-align: center;
+            text-transform: uppercase;
+            box-shadow: 0 0 30px var(--color-cinta);
+            display: none;
+            z-index: 200;
+            animation: aparecerCartel 0.5s forwards;
+        }
+
+        @keyframes aparecerCartel {
+            from { transform: scale(0); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Partículas de fondo -->
+    <script>
+        for (let i = 0; i < 30; i++) {
+            let particula = document.createElement('div');
+            particula.className = 'particula';
+            particula.style.width = Math.random() * 8 + 2 + 'px';
+            particula.style.height = particula.style.width;
+            particula.style.left = Math.random() * 100 + 'vw';
+            particula.style.bottom = '-' + (Math.random() * 20 + 10) + 'px';
+            particula.style.animationDelay = Math.random() * 5 + 's';
+            particula.style.animationDuration = (Math.random() * 3 + 4) + 's';
+            particula.style.background = `rgba(${Math.random()*100+155}, ${Math.random()*50+100}, 255, ${Math.random()*0.5+0.3})`;
+            document.body.appendChild(particula);
+        }
+    </script>
+
+    <div id="super-destello"></div>
+    <div id="cartel-final">Regalo en proceso de creación<br>es solo una prueba</div>
+
+    <div id="escenario">
+        
+        <!-- UI -->
+        <div id="ui-contenedor">
+            <div id="texto-guia">abrir rasca</div>
+            <div id="indicador-rascado"></div>
+        </div>
+
+        <!-- Árbol de Navidad -->
+        <div id="arbol">
+            <div class="hojas-arbol">
+                <div class="esfera esfera-roja" style="top: 20px; left: -10px;"></div>
+                <div class="esfera esfera-rosa" style="top: 50px; left: 15px;"></div>
+                <div class="esfera esfera-roja" style="top: 80px; left: -25px;"></div>
+                <div class="esfera esfera-rosa" style="top: 90px; left: 5px;"></div>
+                <div class="esfera esfera-roja" style="top: 40px; left: -30px;"></div>
+            </div>
+        </div>
+
+        <!-- Caja de Regalo -->
+        <div id="contenedor-regalo">
+            <!-- Lazo (fuera del cubo para que no se corte) -->
+            <div id="lazo-contenedor">
+                <div class="oreja-lazo oreja-izq"></div>
+                <div class="oreja-lazo oreja-der"></div>
+                <div class="nudo-lazo"></div>
+            </div>
+
+            <div class="cara frontal">
+                <div class="cinta-v"></div>
+                <div class="cinta-h"></div>
+                <div id="estrella"></div>
+                <!-- Rasguños visuales (ocultos al inicio) -->
+                <div class="rasguño" style="top:30px; left:20px; width:40px; transform:rotate(10deg); id="scratch-1"></div>
+                <div class="rasguño" style="bottom:40px; right:10px; width:60px; transform:rotate(-15deg); id="scratch-2"></div>
+                <div class="rasguño" style="top:100px; left:80px; width:30px; transform:rotate(80deg); id="scratch-3"></div>
+            </div>
+            <div class="cara derecha">
+                <div class="cinta-v"></div>
+                <div class="cinta-h"></div>
+            </div>
+            <div class="cara superior">
+                <div class="cinta-v"></div>
+                <div class="cinta-h"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const regalo = document.getElementById('contenedor-regalo');
+        const textoGuia = document.getElementById('texto-guia');
+        const indicador = document.getElementById('indicador-rascado');
+        const destelloFinal = document.getElementById('super-destello');
+        const cartelFinal = document.getElementById('cartel-final');
+        const rasguños = document.querySelectorAll('.rasguño');
+
+        let rascadosTarget = 4;
+        let rascadosActuales = 0;
+        let isFinalizado = false;
+        
+        // Variables para detección de gestos
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let minDistance = 50; // distancia mínima para considerar un rasca
+
+        // Variables para AFK
+        let afkTimer;
+        let timeToAfk = 5000; // 5 segundos para considerarse AFK
+        let isAfk = false;
+
+        // --- Lógica AFK ---
+        function resetAfkTimer() {
+            clearTimeout(afkTimer);
+            if (isAfk) {
+                isAfk = false;
+                if(!isFinalizado) {
+                    regalo.classList.remove('estado-afk');
+                    textoGuia.innerText = "abrir rasca";
+                    indicador.style.display = "block";
+                }
+            }
+            if(!isFinalizado) {
+                afkTimer = setTimeout(goAfk, timeToAfk);
+            }
+        }
+
+        function goAfk() {
+            if(isFinalizado || rascadosActuales > 0) return;
+            isAfk = true;
+            regalo.classList.add('estado-afk');
+            textoGuia.innerText = "¡Haz algo!";
+            indicador.style.display = "none";
+        }
+
+        // Iniciar timer AFK al cargar
+        resetAfkTimer();
+
+        // Detectar actividad para resetear AFK
+        ['mousedown', 'mousemove', 'keypress', 'touchstart', 'touchmove'].forEach(evt => {
+            window.addEventListener(evt, resetAfkTimer, false);
+        });
+
+
+        // --- Lógica de Rascado (Scratch) ---
+        
+        function registrarRascado() {
+            if(isFinalizado || isAfk) return;
+
+            rascadosActuales++;
+            
+            // Feedback visual suave de "romper"
+            let scale = 1 - (rascadosActuales * 0.05);
+            regalo.style.transform = `rotateX(-15deg) rotateY(15deg) scale(${scale})`;
+            
+            // Mostrar rasguños progresivamente
+            if(rascadosActuales <= rasguños.length) {
+                rasguños[rascadosActuales-1].style.opacity = '1';
+            }
+
+            if (rascadosActuales === 1) {
+                textoGuia.innerText = "sigue así";
+                // Cambiar emoji indicador a todas direcciones
+                indicador.style.setProperty('--flecha-content', '"↔️↕️"');
+                // truco css para cambiar content
+                document.styleSheets[0].addRule('#indicador-rascado::after','content: "↔️↕️";');
+            }
+
+            if (rascadosActuales >= rascadosTarget) {
+                finalizarAnimacion();
+            }
+        }
+
+        function finalizarAnimacion() {
+            isFinalizado = true;
+            clearTimeout(afkTimer);
+            
+            // Ocultar UI
+            textoGuia.style.display = 'none';
+            indicador.style.display = 'none';
+
+            // Animación final de la caja
+            regalo.style.transform = "rotateX(-15deg) rotateY(15deg) scale(1)"; // Reset scale para la anim
+            regalo.classList.remove('estado-afk');
+            regalo.classList.add('animacion-final');
+
+            // Secuencia de destello y cartel
+            setTimeout(() => {
+                // Posicionar destello en el centro de la caja
+                const rect = regalo.getBoundingClientRect();
+                destelloFinal.style.left = (rect.left + rect.width / 2) + 'px';
+                destelloFinal.style.top = (rect.top + rect.height / 2) + 'px';
+                destelloFinal.style.opacity = '1';
+                
+                // Mostrar Cartel
+                setTimeout(() => {
+                    cartelFinal.style.display = 'block';
+                    // Centrar cartel
+                    cartelFinal.style.left = (window.innerWidth / 2 - cartelFinal.offsetWidth / 2) + 'px';
+                    cartelFinal.style.top = (window.innerHeight / 2 - cartelFinal.offsetHeight / 2) + 'px';
+                    
+                    destelloFinal.style.opacity = '0'; // Ocultar destello poco a poco
+                    destelloFinal.style.transition = 'opacity 1s';
+                }, 100);
+
+            }, 600); // A mitad de la animación de giro
+        }
+
+        // --- Detectar Gestos Mouse y Touch ---
+
+        // Mouse
+        regalo.addEventListener('mousedown', (e) => {
+            if(isFinalizado || isAfk) return;
+            touchStartX = e.screenX;
+            touchStartY = e.screenY;
+        });
+
+        regalo.addEventListener('mouseup', (e) => {
+            if(isFinalizado || isAfk) return;
+            let moveX = e.screenX - touchStartX;
+            let moveY = e.screenY - touchStartY;
+            
+            if (Math.abs(moveX) > minDistance || Math.abs(moveY) > minDistance) {
+                registrarRascado();
+            }
+        });
+
+        // Touch (Móvil)
+        regalo.addEventListener('touchstart', (e) => {
+            if(isFinalizado || isAfk) return;
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, {passive: true});
+
+        regalo.addEventListener('touchend', (e) => {
+            if(isFinalizado || isAfk) return;
+            let moveX = e.changedTouches[0].screenX - touchStartX;
+            let moveY = e.changedTouches[0].screenY - touchStartY;
+
+            if (Math.abs(moveX) > minDistance || Math.abs(moveY) > minDistance) {
+                registrarRascado();
+            }
+        }, {passive: true});
+
+        // Prevenir comportamiento por defecto al arrastrar en la caja
+        regalo.addEventListener('touchmove', (e) => {
+            if(!isFinalizado && !isAfk) e.preventDefault();
+        }, {passive: false});
+
+    </script>
+</body>
+</html>
